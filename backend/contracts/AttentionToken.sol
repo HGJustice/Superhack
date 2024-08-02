@@ -8,7 +8,7 @@ import 'contracts/UserManagement.sol';
 contract AttentionToken is ERC20 {
   UserManagement private userContract;
 
-  error NoAccountCreated();
+  error AccountDoesNotExist();
 
   event AttentionTokenized(address user, uint256 amount);
 
@@ -18,8 +18,8 @@ contract AttentionToken is ERC20 {
 
   function tokenizeAttention(uint256 _timeOfMediaition) external {
     UserManagement.User memory currentUser = userContract.getUser(msg.sender);
-    if (currentUser.addy == address(0)) {
-      revert NoAccountCreated();
+    if (currentUser.userAddress == address(0)) {
+      revert AccountDoesNotExist();
     }
 
     _mint(msg.sender, _timeOfMediaition);

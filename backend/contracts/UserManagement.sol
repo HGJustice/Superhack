@@ -5,12 +5,12 @@ contract UserManagement {
   struct User {
     uint256 id;
     string userName;
-    address addy;
+    address userAddress;
     address[] friends;
   }
 
   error UserAlreadyCreated();
-  error NoAccountCreated();
+  error AccountDoesNotExist();
   error NotOwner();
 
   mapping(address => User) users;
@@ -20,7 +20,7 @@ contract UserManagement {
   event FriendAdded(address newFriendAddy, string userName, address userAddy);
 
   function createUser(string calldata _username) external {
-    if (users[msg.sender].addy != address(0)) {
+    if (users[msg.sender].userAddress != address(0)) {
       revert UserAlreadyCreated();
     }
 
@@ -36,19 +36,19 @@ contract UserManagement {
     currentUserId++;
   }
 
-  function getUser(address userAddress) external view returns (User memory) {
-    return users[userAddress];
+  function getUser(address _userAddress) external view returns (User memory) {
+    return users[_userAddress];
   }
 
-  function addFriend(address newFriend) external {
-    if (users[newFriend].addy == address(0)) {
-      revert NoAccountCreated();
+  function addFriend(address _newFriend) external {
+    if (users[_newFriend].userAddress == address(0)) {
+      revert AccountDoesNotExist();
+    }
+    if (users[msg.sender].userAddress == address(0)) {
+      revert AccountDoesNotExist();
     }
     User storage currentUser = users[msg.sender];
-    if (users[msg.sender].addy == address(0)) {
-      revert NoAccountCreated();
-    }
-    currentUser.friends.push(newFriend);
-    emit FriendAdded(newFriend, currentUser.userName, currentUser.addy);
+    currentUser.friends.push(_newFriend);
+    emit FriendAdded(_newFriend, currentUser.userName, currentUser.userAddress);
   }
 }
