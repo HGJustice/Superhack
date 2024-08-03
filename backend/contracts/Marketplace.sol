@@ -66,10 +66,23 @@ contract Marketplace {
     _;
   }
 
-  function depositTokens(uint256 _amount) external checkAccountExists {
+  modifier checkAmount(uint256 _amount) {
     if (_amount == 0) {
       revert AmountMustBePositive();
     }
+    _;
+  }
+
+  modifier checkBalanceToAmount(uint256 _amount) {
+    if (tokenBalance[msg.sender] < _amount) {
+      revert InsufficientTokenBalance();
+    }
+    _;
+  }
+
+  function depositTokens(
+    uint256 _amount
+  ) external checkAccountExists checkAmount(_amount) {
     if (tokenContract.balanceOf(msg.sender) < _amount) {
       revert InsufficientTokenBalance();
     }
@@ -89,13 +102,12 @@ contract Marketplace {
   function createListing(
     uint256 _amount,
     uint256 _price
-  ) external checkAccountExists {
-    if (_amount == 0) {
-      revert AmountMustBePositive();
-    }
-    if (tokenBalance[msg.sender] < _amount) {
-      revert InsufficientTokenBalance();
-    }
+  )
+    external
+    checkAccountExists
+    checkAmount(_amount)
+    checkBalanceToAmount(_amount)
+  {
     Listing memory newListing = Listing(
       currentListingId,
       msg.sender,
@@ -130,13 +142,12 @@ contract Marketplace {
 
   function withdrawDepositedTokens(
     uint256 _amount
-  ) external checkAccountExists {
-    if (_amount == 0) {
-      revert AmountMustBePositive();
-    }
-    if (tokenBalance[msg.sender] < _amount) {
-      revert InsufficientTokenBalance();
-    }
+  )
+    external
+    checkAccountExists
+    checkAmount(_amount)
+    checkBalanceToAmount(_amount)
+  {
     tokenBalance[msg.sender] -= _amount;
     bool tokenTransfer = IERC20(address(tokenContract)).transfer(
       msg.sender,
@@ -186,16 +197,16 @@ contract Marketplace {
     emit AdminWithdrawnFees(msg.sender);
   }
 
-  function exampleMethod(bytes[] calldata priceUpdate) public payable {
-    // Submit a priceUpdate to the Pyth contract to update the on-chain price.
-    // Updating the price requires paying the fee returned by getUpdateFee.
-    // WARNING: These lines are required to ensure the getPrice call below succeeds. If you remove them, transactions may fail with "0x19abf40e" error.
-    uint fee = pyth.getUpdateFee(priceUpdate);
-    pyth.updatePriceFeeds{ value: fee }(priceUpdate);
-    // Read the current price from a price feed.
-    // Each price feed (e.g., ETH/USD) is identified by a price feed ID.
-    // The complete list of feed IDs is available at https://pyth.network/developers/price-feed-ids
-    bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
-    PythStructs.Price memory price = pyth.getPrice(priceFeedId);
-  }
+  //  function exampleMethod(bytes[] calldata priceUpdate) public payable {
+  //     // Submit a priceUpdate to the Pyth contract to update the on-chain price.
+  //     // Updating the price requires paying the fee returned by getUpdateFee.
+  //     // WARNING: These lines are required to ensure the getPrice call below succeeds. If you remove them, transactions may fail with "0x19abf40e" error.
+  //     uint fee = pyth.getUpdateFee(priceUpdate);
+  //     pyth.updatePriceFeeds{ value: fee }(priceUpdate);
+  //     // Read the current price from a price feed.
+  //     // Each price feed (e.g., ETH/USD) is identified by a price feed ID.
+  //     // The complete list of feed IDs is available at https://pyth.network/developers/price-feed-ids
+  //     bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
+  //     PythStructs.Price memory price = pyth.getPriceUnsafe(priceFeedId);
+  // }
 }
