@@ -47,14 +47,10 @@ contract Marketplace {
   event ListingBought(uint256 id, uint256 amount, address buyer);
   event AdminWithdrawnFees(address owner);
 
-  constructor(
-    address userContractAddress,
-    address tokenContractAddress,
-    address pythContractAddy
-  ) {
+  constructor(address userContractAddress, address tokenContractAddress) {
     userContract = UserManagement(userContractAddress);
     tokenContract = AttentionToken(tokenContractAddress);
-    pyth = IPyth(pythContractAddy);
+    pyth = IPyth(0x0708325268dF9F66270F1401206434524814508b);
     owner = msg.sender;
   }
 
@@ -196,6 +192,8 @@ contract Marketplace {
     }
     emit AdminWithdrawnFees(msg.sender);
   }
+
+  receive() external payable {}
 
   //  function exampleMethod(bytes[] calldata priceUpdate) public payable {
   //     // Submit a priceUpdate to the Pyth contract to update the on-chain price.
