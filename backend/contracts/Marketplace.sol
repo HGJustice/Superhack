@@ -11,7 +11,8 @@ contract Marketplace {
   UserManagement private userContract;
   AttentionToken private tokenContract;
   IPyth private pyth;
-  // bytes32 immutable priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace;
+  bytes32 immutable priceFeedId =
+    0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace;
 
   struct Listing {
     uint256 id;
@@ -36,7 +37,12 @@ contract Marketplace {
   address owner;
 
   event TokensDeposited(address user, uint256 amount);
-  event ListingCreated(uint256 id, uint256 amount, address seller);
+  event ListingCreated(
+    uint256 id,
+    uint256 amount,
+    uint256 price,
+    address seller
+  );
   event ListingDeleted(
     uint256 id,
     address tokenSeller,
@@ -44,7 +50,7 @@ contract Marketplace {
     uint256 price
   );
   event DepositedTokensWithdrawn(address tokenOwner, uint256 amount);
-  event ListingBought(uint256 id, uint256 amount, address buyer);
+  event ListingBought(uint256 id, uint256 amount, uint256 price, address buyer);
   event AdminWithdrawnFees(address owner);
 
   constructor(address userContractAddress, address tokenContractAddress) {
@@ -95,7 +101,7 @@ contract Marketplace {
     emit TokensDeposited(msg.sender, _amount);
   }
 
-  function createListingg(
+  function createListing(
     uint256 _amount,
     uint256 _price
   )
@@ -113,7 +119,7 @@ contract Marketplace {
 
     listings[currentListingId] = newListing;
     tokenBalance[msg.sender] -= _amount;
-    emit ListingCreated(currentListingId, _amount, msg.sender);
+    emit ListingCreated(currentListingId, _amount, _price, msg.sender);
     currentListingId++;
   }
 
@@ -176,7 +182,12 @@ contract Marketplace {
       revert EthTransferFailed();
     }
 
-    emit ListingBought(_listingId, currentListing.amount, msg.sender);
+    emit ListingBought(
+      _listingId,
+      currentListing.amount,
+      currentListing.price,
+      msg.sender
+    );
     delete listings[_listingId];
   }
 
@@ -195,16 +206,17 @@ contract Marketplace {
 
   receive() external payable {}
 
-  //  function exampleMethod(bytes[] calldata priceUpdate) public payable {
-  //     // Submit a priceUpdate to the Pyth contract to update the on-chain price.
-  //     // Updating the price requires paying the fee returned by getUpdateFee.
-  //     // WARNING: These lines are required to ensure the getPrice call below succeeds. If you remove them, transactions may fail with "0x19abf40e" error.
-  //     uint fee = pyth.getUpdateFee(priceUpdate);
-  //     pyth.updatePriceFeeds{ value: fee }(priceUpdate);
-  //     // Read the current price from a price feed.
-  //     // Each price feed (e.g., ETH/USD) is identified by a price feed ID.
-  //     // The complete list of feed IDs is available at https://pyth.network/developers/price-feed-ids
-  //     bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
-  //     PythStructs.Price memory price = pyth.getPriceUnsafe(priceFeedId);
-  // }
+  function exampleMethod(bytes[] calldata priceUpdate) public payable {
+    // Submit a priceUpdate to the Pyth contract to update the on-chain price.
+    // Updating the price requires paying the fee returned by getUpdateFee.
+    // WARNING: These lines are required to ensure the getPrice call below succeeds. If you remove them, transactions may fail with "0x19abf40e" error.
+    uint fee = pyth.getUpdateFee(priceUpdate);
+    pyth.updatePriceFeeds{ value: fee }(priceUpdate);
+
+    // Read the current price from a price feed.
+    // Each price feed (e.g., ETH/USD) is identified by a price feed ID.
+    // The complete list of feed IDs is available at https://pyth.network/developers/price-feed-ids
+    bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
+    PythStructs.Price memory price = pyth.getPrice(priceFeedId);
+  }
 }

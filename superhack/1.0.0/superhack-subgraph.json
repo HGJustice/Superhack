@@ -1,0 +1,36 @@
+{
+  "name": "superhack/1.0.0",
+  "version": "1",
+  "abis": {
+    "usermanagement": {
+      "path": "./abis/usermanagement.json"
+    },
+    "attentiontoken": {
+      "path": "./abis/attentiontoken.json"
+    },
+    "marketplace": {
+      "path": "./abis/marketplace.json"
+    }
+  },
+  "instances": [
+    {
+      "abi": "usermanagement",
+      "address": "0x6f3D22eE992326249134926724C2A26348f98084",
+      "startBlock": 15569197,
+      "chain": "optimism-sepolia"
+    },
+    {
+      "abi": "attentiontoken",
+      "address": "0xE8791750Db4e0D07eBba1905BAC4316823CcC37B",
+      "startBlock": 15569206,
+      "chain": "optimism-sepolia"
+    },
+    {
+      "abi": "marketplace",
+      "address": "0xDe0A6cc80c89F2bb8c792Ecb6e1aa5E315b1F5a1",
+      "startBlock": 15569222,
+      "chain": "optimism-sepolia"
+    }
+  ],
+  "enableCallHandlers": false
+}
