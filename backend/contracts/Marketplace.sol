@@ -52,11 +52,12 @@ contract Marketplace {
   event DepositedTokensWithdrawn(address tokenOwner, uint256 amount);
   event ListingBought(uint256 id, uint256 amount, uint256 price, address buyer);
   event AdminWithdrawnFees(address owner);
+  event newPrice(int64 amoount);
 
   constructor(address userContractAddress, address tokenContractAddress) {
     userContract = UserManagement(userContractAddress);
     tokenContract = AttentionToken(tokenContractAddress);
-    pyth = IPyth(0x0708325268dF9F66270F1401206434524814508b);
+    pyth = IPyth(0xA2aa501b19aff244D90cc15a4Cf739D2725B5729);
     owner = msg.sender;
   }
 
@@ -161,12 +162,28 @@ contract Marketplace {
     emit DepositedTokensWithdrawn(msg.sender, _amount);
   }
 
-  function buyListing(uint256 _listingId) external payable checkAccountExists {
+  function buyListing(
+    uint256 _listingId,
+    bytes[] calldata priceUpdate
+  ) external payable checkAccountExists {
     if (_listingId >= currentListingId || _listingId == 0) {
       revert InvalidListingID();
     }
+
     Listing storage currentListing = listings[_listingId];
-    //use pyth network price oracle to check listing price >= msg.value
+
+    // Get the current ETH/USD price
+    int256 ethPrice = getEthPrice(priceUpdate);
+    require(ethPrice > 0, 'Invalid ETH price');
+
+    // Convert the listing price from USD to ETH
+    // Assuming the price is in cents and Pyth price has 8 decimals
+    uint256 listingPriceInEth = (currentListing.price * 1e26) /
+      uint256(ethPrice);
+
+    // Check if enough ETH was sent
+    require(msg.value >= listingPriceInEth, 'Not enough ETH sent');
+
     bool tokenTransfer = IERC20(address(tokenContract)).transfer(
       msg.sender,
       currentListing.amount
@@ -174,12 +191,25 @@ contract Marketplace {
     if (!tokenTransfer) {
       revert TokenTransferFailed();
     }
-    uint256 feesDeducted = msg.value - 0.001 ether;
+
+    // Calculate the amount to send to the seller (subtracting the fee)
+    uint256 fee = 0.001 ether;
+    require(listingPriceInEth > fee, 'Listing price too low');
+    uint256 amountToSeller = listingPriceInEth - fee;
+
     (bool ethTransfer, ) = currentListing.tokenSeller.call{
-      value: feesDeducted
+      value: amountToSeller
     }('');
     if (!ethTransfer) {
       revert EthTransferFailed();
+    }
+
+    // Refund excess ETH to the buyer
+    if (msg.value > listingPriceInEth) {
+      (bool refundTransfer, ) = msg.sender.call{
+        value: msg.value - listingPriceInEth
+      }('');
+      require(refundTransfer, 'Refund transfer failed');
     }
 
     emit ListingBought(
@@ -204,19 +234,18 @@ contract Marketplace {
     emit AdminWithdrawnFees(msg.sender);
   }
 
-  receive() external payable {}
-
-  function exampleMethod(bytes[] calldata priceUpdate) public payable {
-    // Submit a priceUpdate to the Pyth contract to update the on-chain price.
-    // Updating the price requires paying the fee returned by getUpdateFee.
-    // WARNING: These lines are required to ensure the getPrice call below succeeds. If you remove them, transactions may fail with "0x19abf40e" error.
-    uint fee = pyth.getUpdateFee(priceUpdate);
+  function getEthPrice(
+    bytes[] calldata priceUpdate
+  ) public payable returns (int256) {
+    uint256 fee = pyth.getUpdateFee(priceUpdate);
     pyth.updatePriceFeeds{ value: fee }(priceUpdate);
 
-    // Read the current price from a price feed.
-    // Each price feed (e.g., ETH/USD) is identified by a price feed ID.
-    // The complete list of feed IDs is available at https://pyth.network/developers/price-feed-ids
     bytes32 priceFeedId = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace; // ETH/USD
     PythStructs.Price memory price = pyth.getPrice(priceFeedId);
+
+    require(price.price > 0, 'Invalid price');
+    return price.price;
   }
+
+  receive() external payable {}
 }
