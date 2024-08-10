@@ -45,32 +45,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "userAddy",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "newName",
-        "type": "string"
-      }
-    ],
-    "name": "NameChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "id",
+        "name": "ud",
         "type": "uint256"
       },
       {
@@ -98,19 +73,6 @@
       }
     ],
     "name": "addFriend",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "_newName",
-        "type": "string"
-      }
-    ],
-    "name": "changeName",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

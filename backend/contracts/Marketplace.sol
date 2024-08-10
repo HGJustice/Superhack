@@ -236,7 +236,7 @@ contract Marketplace {
 
   function getEthPrice(
     bytes[] calldata priceUpdate
-  ) public payable returns (int256) {
+  ) external payable returns (int256) {
     uint256 fee = pyth.getUpdateFee(priceUpdate);
     pyth.updatePriceFeeds{ value: fee }(priceUpdate);
 
