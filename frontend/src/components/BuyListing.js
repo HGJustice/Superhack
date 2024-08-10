@@ -1,3 +1,4 @@
+/* global BigInt */
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import MarketplaceABI from '../ABI/Marketplace.json';
@@ -51,25 +52,36 @@ function BuyListing() {
     const signer = await provider.getSigner();
     const pythData = await fetchPythData();
 
+    const priceIds = [
+      '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace', // ETH/USD price id
+    ];
+
     const marketplaceContract = new ethers.Contract(
       marketplaceAddress,
       MarketplaceABI,
       signer,
     );
 
+    //get listing price - 5$
     const listing = await marketplaceContract.listings(formData.listingId);
-    const listingPrice = listing.price;
+    const listingPrice = Number(listing.price);
+    console.log(listingPrice);
 
-    //convert 5 dollars into eth
-    const currentEthPrice = await marketplaceContract.getEthPrice(pythData);
-    console.log('ETH price:', currentEthPrice.toString());
+    //get current value of eth
+    let ethPrice;
+    const response = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
+    );
+    const data = await response.json();
+    ethPrice = data.ethereum.usd;
+    console.log('Current ETH price:', ethPrice);
 
-    // Assuming the price is returned in wei and represents USD with 8 decimal places
-    const ethPriceInUsd = Number(ethers.formatUnits(currentEthPrice, 8));
-    console.log('ETH price in USD:', ethPriceInUsd);
+    //convert listing price to eth
 
-    const valueToSend = 0;
-
+    const amount = listingPrice / ethPrice;
+    const roundedAmount = amount.toFixed(18);
+    const valueToSend = ethers.parseEther(roundedAmount.toString());
+    //send eth
     const buyTx = await marketplaceContract.buyListing(
       formData.listingId,
       pythData,
